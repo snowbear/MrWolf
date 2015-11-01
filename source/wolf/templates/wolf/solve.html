@@ -1,0 +1,130 @@
+<html>
+<head>
+
+<style type="text/css">
+
+.incorrect .indicator {
+	background: red;
+}
+
+.correct .indicator {
+	background: lightgreen;
+}
+
+.pending .indicator {
+	background: yellow;
+}
+
+</style>
+
+<script src="https://code.jquery.com/jquery-1.11.3.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+var add_test = function() {
+	// ctrlTest = $("<table>
+};
+
+var get_test_controls = function() {
+	return $("#divTests table");
+};
+
+var set_status = function(statuses) {
+	var testControls = get_test_controls();
+	$.each(testControls, function (i, ctrl) {
+		$(ctrl).removeClass('correct incorrect pending');
+		$(ctrl).addClass(statuses[i]);
+	});
+};
+
+var collect_tests = function() {
+	var testControls = get_test_controls();
+	var inputs = $.map(testControls, function (control) { return $(control).find(".input").val(); });
+	var outputs = $.map(testControls, function (control) { return $(control).find(".output").val(); });
+	return {
+		input: JSON.stringify(inputs),
+		output: JSON.stringify(outputs),
+	};
+};
+
+var on_executed = function(result) {
+	var executionResults = JSON.parse(result);
+	var statuses = $.map(executionResults, function(r) { return r.successful ? "correct" : "incorrect"; });
+	set_status(statuses);
+};
+
+var run = function() {
+	var testControls = get_test_controls();
+	var pendingStatuses = $.map(testControls, function() { return 'pending'; });
+	set_status(pendingStatuses);
+
+	var code = $("#tbCode").val();
+	var data = { };
+	
+	collect_tests();
+	
+	$.extend(data, 
+		collect_tests(),
+		{
+			csrfmiddlewaretoken: '{{ csrf_token }}',
+			code: code,
+		}
+	);
+	
+	var response = $.post('run', data = data, success = on_executed);
+};
+
+$(function() {
+	$("#btnRun").click(run);
+	$("#btnAddTest").click(add_test);
+});
+
+</script>
+
+</head>
+<body>
+
+<div style="float:left">
+<textarea cols="100" rows="40" id="tbCode">
+#include <iostream>
+
+using namespace std;
+
+int main() {
+	int a, b;
+	cin >> a >> b;
+	cout << a + b;
+}
+</textarea>
+</div>
+
+<div style="float:right">
+	<input type="button" id="btnAddTest" value="Add test" />
+	<div id="divTests">
+		<table class="correct">
+			<tr>
+				<td rowspan="2" class="indicator" style="width: 20"></td>
+				<td>Input: <input type="text" value="1 5" class="input" /></td>
+			</tr>
+			<tr>
+				<td>Output: <input type="text" value="6" class="output" /></td>
+			</tr>
+		</table>
+		<table class="correct">
+			<tr>
+				<td rowspan="2" class="indicator" style="width: 20"></td>
+				<td>Input: <input type="text" value="5 6" class="input" /></td>
+			</tr>
+			<tr>
+				<td>Output: <input type="text" value="11" class="output" /></td>
+			</tr>
+		</table>
+	</div>
+</div>
+
+<div>
+<input type="button" value="Run" id="btnRun" />
+</div>
+
+</body>
+</html>
