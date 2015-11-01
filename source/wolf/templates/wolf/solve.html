@@ -19,10 +19,29 @@
 
 <script src="https://code.jquery.com/jquery-1.11.3.js" type="text/javascript"></script>
 
+<script id="test-template" type="text/x-custom-template">
+	<table>
+		<tr>
+			<td rowspan="2" class="indicator" style="width: 20"></td>
+			<td>Input: <input type="text" value="" class="input" /></td>
+		</tr>
+		<tr>
+			<td>Output: <input type="text" value="" class="output" /></td>
+		</tr>
+	</table>
+</script>
+
 <script type="text/javascript">
 
-var add_test = function() {
-	// ctrlTest = $("<table>
+var tests = [ "1 5" , "5 6" , "5 6" ];
+var outputs = [ "6" , "11" , "12" ];
+
+var add_test = function(input, output) {
+	var template = $('#test-template').html();
+	var control = $(template);
+	control.find(".input").val(input);
+	control.find(".output").val(output);
+	$('#divTests').append(control);
 };
 
 var get_test_controls = function() {
@@ -34,6 +53,12 @@ var set_status = function(statuses) {
 	$.each(testControls, function (i, ctrl) {
 		$(ctrl).removeClass('correct incorrect pending');
 		$(ctrl).addClass(statuses[i]);
+	});
+};
+
+var init_test_controls = function() {
+	$.each(tests, function (i, t) {
+		add_test(t, outputs[i]);
 	});
 };
 
@@ -75,8 +100,10 @@ var run = function() {
 };
 
 $(function() {
+	init_test_controls();
+
 	$("#btnRun").click(run);
-	$("#btnAddTest").click(add_test);
+	$("#btnAddTest").click(function () { add_test("", ""); });
 });
 
 </script>
@@ -101,24 +128,6 @@ int main() {
 <div style="float:right">
 	<input type="button" id="btnAddTest" value="Add test" />
 	<div id="divTests">
-		<table class="correct">
-			<tr>
-				<td rowspan="2" class="indicator" style="width: 20"></td>
-				<td>Input: <input type="text" value="1 5" class="input" /></td>
-			</tr>
-			<tr>
-				<td>Output: <input type="text" value="6" class="output" /></td>
-			</tr>
-		</table>
-		<table class="correct">
-			<tr>
-				<td rowspan="2" class="indicator" style="width: 20"></td>
-				<td>Input: <input type="text" value="5 6" class="input" /></td>
-			</tr>
-			<tr>
-				<td>Output: <input type="text" value="11" class="output" /></td>
-			</tr>
-		</table>
 	</div>
 </div>
 
