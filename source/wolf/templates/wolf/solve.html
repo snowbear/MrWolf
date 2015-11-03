@@ -83,7 +83,8 @@ var run = function() {
 	var pendingStatuses = $.map(testControls, function() { return 'pending'; });
 	set_status(pendingStatuses);
 
-	var code = $("#tbCode").val();
+    var editor = ace.edit("editor");
+	var code = editor.getValue();
 	var data = { };
 	
 	collect_tests();
@@ -112,8 +113,7 @@ $(function() {
 <body>
 
 <div style="float:left">
-<textarea cols="100" rows="40" id="tbCode">
-#include <iostream>
+<div id="editor" style="width:500px; height: 500px">#include &lt;iostream&gt;
 
 using namespace std;
 
@@ -121,8 +121,13 @@ int main() {
 	int a, b;
 	cin >> a >> b;
 	cout << a + b;
-}
-</textarea>
+}</div>
+<script src="https://cdn.jsdelivr.net/ace/1.2.1/min/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/c_cpp");
+</script>
 </div>
 
 <div style="float:right">
