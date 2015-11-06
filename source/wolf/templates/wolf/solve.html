@@ -115,7 +115,10 @@ var TestList = React.createClass({
 	on_executed: function(result) {
 		var executionResults = JSON.parse(result);
 		window.rr = executionResults;
-		for (var i = 0 ; i < executionResults.length ; i++) this.state.tests[i].status = executionResults[i].successful ? "correct" : "incorrect";
+		for (var i = 0 ; i < executionResults.length ; i++) {
+			this.state.tests[i].status = executionResults[i].successful ? "correct" : "incorrect";
+			this.state.tests[i].actual_output = executionResults[i].output;
+		}
 		this.setState(this.state);
 	},
 	run: function() {

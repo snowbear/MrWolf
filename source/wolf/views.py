@@ -9,8 +9,9 @@ from django.utils.safestring import mark_safe
 from hackerrank import api
 
 class SubmissionResult:
-    def __init__(self, successful):
+    def __init__(self, successful, output):
         self.successful = successful
+        self.output = output
 
 def index(request):
     return HttpResponse("")
@@ -26,6 +27,6 @@ def run(request):
     language = api.HR_LANGUAGE.CPP
     execution_result = api.runCode(language, code, input)
     
-    result = [SubmissionResult(expected == actual).__dict__ for (expected, actual) in zip(execution_result, expected_output)]
+    result = [SubmissionResult(expected == actual, actual).__dict__ for (actual, expected) in zip(execution_result, expected_output)]
     
     return HttpResponse(json.dumps(result))
