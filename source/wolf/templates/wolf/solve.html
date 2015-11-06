@@ -1,144 +1,174 @@
 <html>
-<head>
+	<head>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.0/react.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.0/react-dom.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.6.15/browser.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+		<script src="https://code.jquery.com/jquery-1.11.3.js" type="text/javascript"></script>
+		<script src="https://cdn.jsdelivr.net/ace/1.2.1/min/ace.js" type="text/javascript" charset="utf-8"></script>
 
-<style type="text/css">
+		<style type="text/css">
+			.incorrect .indicator {
+				background: red;
+			}
 
-.incorrect .indicator {
-	background: red;
-}
+			.correct .indicator {
+				background: lightgreen;
+			}
 
-.correct .indicator {
-	background: lightgreen;
-}
-
-.pending .indicator {
-	background: yellow;
-}
-
-</style>
-
-<script src="https://code.jquery.com/jquery-1.11.3.js" type="text/javascript"></script>
-
-<script id="test-template" type="text/x-custom-template">
-	<table>
-		<tr>
-			<td rowspan="2" class="indicator" style="width: 20"></td>
-			<td>Input: <input type="text" value="" class="input" /></td>
-		</tr>
-		<tr>
-			<td>Output: <input type="text" value="" class="output" /></td>
-		</tr>
-	</table>
-</script>
-
-<script type="text/javascript">
-
-var tests = [ "1 5" , "5 6" , "5 6" ];
-var outputs = [ "6" , "11" , "12" ];
-
-var add_test = function(input, output) {
-	var template = $('#test-template').html();
-	var control = $(template);
-	control.find(".input").val(input);
-	control.find(".output").val(output);
-	$('#divTests').append(control);
-};
-
-var get_test_controls = function() {
-	return $("#divTests table");
-};
-
-var set_status = function(statuses) {
-	var testControls = get_test_controls();
-	$.each(testControls, function (i, ctrl) {
-		$(ctrl).removeClass('correct incorrect pending');
-		$(ctrl).addClass(statuses[i]);
-	});
-};
-
-var init_test_controls = function() {
-	$.each(tests, function (i, t) {
-		add_test(t, outputs[i]);
-	});
-};
-
-var collect_tests = function() {
-	var testControls = get_test_controls();
-	var inputs = $.map(testControls, function (control) { return $(control).find(".input").val(); });
-	var outputs = $.map(testControls, function (control) { return $(control).find(".output").val(); });
-	return {
-		input: JSON.stringify(inputs),
-		output: JSON.stringify(outputs),
-	};
-};
-
-var on_executed = function(result) {
-	var executionResults = JSON.parse(result);
-	var statuses = $.map(executionResults, function(r) { return r.successful ? "correct" : "incorrect"; });
-	set_status(statuses);
-};
-
-var run = function() {
-	var testControls = get_test_controls();
-	var pendingStatuses = $.map(testControls, function() { return 'pending'; });
-	set_status(pendingStatuses);
-
-    var editor = ace.edit("editor");
-	var code = editor.getValue();
-	var data = { };
-	
-	collect_tests();
-	
-	$.extend(data, 
-		collect_tests(),
-		{
-			csrfmiddlewaretoken: '{{ csrf_token }}',
-			code: code,
-		}
-	);
-	
-	var response = $.post('run', data = data, success = on_executed);
-};
-
-$(function() {
-	init_test_controls();
-
-	$("#btnRun").click(run);
-	$("#btnAddTest").click(function () { add_test("", ""); });
+			.pending .indicator {
+				background: yellow;
+			}
+			
+			.not_executed .indicator {
+				background: lightgray;
+			}
+		</style>
+  </head>
+  <body>
+    <div id="content"></div>
+    <div id="tests"></div>
+    <script type="text/babel">
+var CodeEditor = React.createClass({
+	getInitialState: function() {
+		return {
+			code: "\
+#include <iostream> \n\
+\n\
+using namespace std; \n\
+\n\
+int main() {\n\
+	int a, b;\n\
+	cin >> a >> b;\n\
+	cout << a + b;\n\
+}",
+		};
+	},
+	componentDidMount: function() {
+		var editor = ace.edit("editor");
+		editor.setTheme("ace/theme/monokai");
+		editor.getSession().setMode("ace/mode/c_cpp");
+		editor.setValue(this.state.code);
+	},
+	getCode: function() {
+		var editor = ace.edit("editor");
+		return editor.getValue();
+	},
+	render: function() {
+		return (
+			<div id="editor" style={ {width: 500 , height: 300 } } />			
+		);
+	}
+});
+var Test = React.createClass({
+	handleChangeOutput: function(e) {
+		this.props.onChangeOutput(e.target.value);
+	},
+	handleChangeInput: function(e) {
+		this.props.onChangeInput(e.target.value);
+	},
+	render: function() {
+		return (
+			<table className={this.props.test.status}>
+				<tbody>
+					<tr>
+						<td rowSpan="3" className="indicator" style={ { width: 20 } }></td>
+						<td>Input: <input type="text" placeholder="Input" value={this.props.test.input} onChange={this.handleChangeInput} /></td>
+					</tr>
+					<tr>
+						<td>Expected output: <input type="text" placeholder="Expected output" value={this.props.test.expected_output} onChange={this.handleChangeOutput} /></td>
+					</tr>
+					<tr>
+						<td>Actual output: <input type="text" placeholder="Expected output" value={this.props.test.actual_output} readOnly='true' /></td>
+					</tr>
+				</tbody>
+			</ table>
+		);
+	}
 });
 
-</script>
+var TestList = React.createClass({
+	getInitialState: function() {
+		return { tests: [
+			{ id: 1, actual_output: "Hello ", input: "1 2", status: "correct", expected_output: "3" },
+			{ id: 2, actual_output: "Test 2", input: "2 3", status: "incorrect", expected_output: "5" },
+		] };
+	},
+	addTest: function(e) {
+		this.setState(function(curState) {
+			var nextId = 1;
+			$.each(curState.tests, function(i, t) { nextId = Math.max(nextId, t.id + 1); })
+			curState.tests.push( { id : nextId, actual_output: "asfaf", status: "not_executed", expected_output: "124" });
+			return curState;
+		});
+	},
+	on_executed: function(result) {
+		var executionResults = JSON.parse(result);
+		window.rr = executionResults;
+		for (var i = 0 ; i < executionResults.length ; i++) this.state.tests[i].status = executionResults[i].successful ? "correct" : "incorrect";
+		this.setState(this.state);
+	},
+	run: function() {
+		this.setState(function(curState) {
+			$.each(curState.tests, function (i, t) { t.status = 'pending'; });
+			return curState;
+		});
+		var input = JSON.stringify($.map(this.state.tests, function(t) { return t.input; }));
+		var expected_outputs = JSON.stringify($.map(this.state.tests, function(t) { return t.expected_output; }));
 
-</head>
-<body>
+		var data = {
+			code: this.refs.codeEditor.getCode(),
+			csrfmiddlewaretoken: '{{ csrf_token }}',
+			input: input,
+			output: expected_outputs,
+		};
+		
+		var response = $.ajax({
+			url: 'run', 
+			type: 'POST',
+			data: data, 
+			success: this.on_executed,
+		});
+	},
+	
+	updateTestInput: function(index, value) {
+		var s = this.state;
+		s.tests[index].input = value;
+		this.setState(s);
+	},
+	
+	updateTestOutput: function(index, value) {
+		var s = this.state;
+		s.tests[index].expected_output = value;
+		this.setState(s);
+	},
+	
+	render: function() {
+		var l = this;
+		var tests = this.state.tests.map(function (test, i) {
+			return (
+				<Test key={test.id} test={test} onChangeInput={l.updateTestInput.bind(l, i)} onChangeOutput={l.updateTestOutput.bind(l, i)} />
+			);
+		});
+		return (
+			<div>
+				<div style={ { float: 'left' } }><CodeEditor ref="codeEditor" /></div>
+				<div>
+					<input type="button" value="Run" onClick={this.run} />
+				</div>
+				<div style={ { float: 'right' } }>
+					<input type="button" value="Add test" onClick={this.addTest} />
+					{ tests }
+				</div>
+			</div>
+		);
+	}
+});
 
-<div style="float:left">
-<div id="editor" style="width:500px; height: 500px">#include &lt;iostream&gt;
-
-using namespace std;
-
-int main() {
-	int a, b;
-	cin >> a >> b;
-	cout << a + b;
-}</div>
-<script src="https://cdn.jsdelivr.net/ace/1.2.1/min/ace.js" type="text/javascript" charset="utf-8"></script>
-<script>
-    var editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
-    editor.getSession().setMode("ace/mode/c_cpp");
-</script>
-</div>
-
-<div style="float:right">
-	<input type="button" id="btnAddTest" value="Add test" />
-	<div id="divTests">
-	</div>
-</div>
-
-<div>
-<input type="button" value="Run" id="btnRun" />
-</div>
-
-</body>
+ReactDOM.render(
+  <TestList tests={tests} />,
+  document.getElementById('content')
+);
+    </script>
+  </body>
 </html>
