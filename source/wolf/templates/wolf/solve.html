@@ -36,31 +36,27 @@
 				vertical-align: top;
 			}
 		</style>
+		<script id="initialCode" type="text/template">#include <iostream>
+
+using namespace std;
+
+int main() {
+	int a, b;
+	cin >> a >> b;
+	cout << a + b;
+}</script>
   </head>
   <body>
     <div id="content"></div>
     <div id="tests"></div>
     <script type="text/babel">
 var CodeEditor = React.createClass({
-	getInitialState: function() {
-		return {
-			code: "\
-#include <iostream> \n\
-\n\
-using namespace std; \n\
-\n\
-int main() {\n\
-	int a, b;\n\
-	cin >> a >> b;\n\
-	cout << a + b;\n\
-}",
-		};
-	},
 	componentDidMount: function() {
+		var code = $("#initialCode").text();
 		var editor = ace.edit("editor");
 		editor.setTheme("ace/theme/monokai");
+		editor.setValue(code);
 		editor.getSession().setMode("ace/mode/c_cpp");
-		editor.setValue(this.state.code);
 	},
 	getCode: function() {
 		var editor = ace.edit("editor");
@@ -68,7 +64,7 @@ int main() {\n\
 	},
 	render: function() {
 		return (
-			<div id="editor" style={ {width: 500 , height: 300 } } />			
+			<div id="editor" style={ {width: 500 , height: 300 } } />
 		);
 	}
 });
