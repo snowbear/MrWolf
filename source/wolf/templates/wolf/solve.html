@@ -36,15 +36,11 @@
 				vertical-align: top;
 			}
 		</style>
-		<script id="initialCode" type="text/template">#include <iostream>
-
-using namespace std;
-
-int main() {
-	int a, b;
-	cin >> a >> b;
-	cout << a + b;
-}</script>
+		<script id="initialCode" type="text/template">{{ code|safe }}</script>
+		<script type"text/javascript>
+			var solutionId = {{ solutionId }};
+			var initialTestData = {{ tests|safe }}
+		</script>
   </head>
   <body>
     <div id="content"></div>
@@ -85,7 +81,7 @@ var Test = React.createClass({
 					</tr>
 					<tr>
 						<td><textarea className="txtOutput" rows="2" cols="60" placeholder="Expected output" value={this.props.test.expected_output} onChange={this.handleChangeOutput} /></td>
-						<td><textarea className="txtOutput" cols="60" placeholder="Expected output" value={this.props.test.actual_output} readOnly='true' /></td>
+						<td><textarea className="txtOutput" cols="60" placeholder="Actual output" value={this.props.test.actual_output} readOnly='true' /></td>
 					</tr>
 				</tbody>
 			</ table>
@@ -95,10 +91,15 @@ var Test = React.createClass({
 
 var TestList = React.createClass({
 	getInitialState: function() {
-		return { tests: [
-			{ id: 1, actual_output: "Hello ", input: "1 2", status: "correct", expected_output: "3" },
-			{ id: 2, actual_output: "Test 2", input: "2 3", status: "incorrect", expected_output: "5" },
-		] };
+		var tests = $.map(initialTestData, function (t, i) {
+			return {
+				id: i + 1,
+				input: t.input,
+				expected_output: t.output,
+				status: "not_executed",
+			};
+		});
+		return { tests: tests };
 	},
 	addTest: function(e) {
 		this.setState(function(curState) {
@@ -124,16 +125,21 @@ var TestList = React.createClass({
 		});
 		var input = JSON.stringify($.map(this.state.tests, function(t) { return t.input; }));
 		var expected_outputs = JSON.stringify($.map(this.state.tests, function(t) { return t.expected_output; }));
+		var tests = JSON.stringify($.map(this.state.tests, function(t) {
+			return {
+				input: t.input,
+				output: t.expected_output,
+			};
+		}));
 
 		var data = {
 			code: this.refs.codeEditor.getCode(),
 			csrfmiddlewaretoken: '{{ csrf_token }}',
-			input: input,
-			output: expected_outputs,
+			tests: tests,
 		};
 		
 		var response = $.ajax({
-			url: 'run', 
+			url: '/run/' + solutionId, 
 			type: 'POST',
 			data: data, 
 			success: this.on_executed,

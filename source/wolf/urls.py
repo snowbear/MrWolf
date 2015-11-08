@@ -3,6 +3,6 @@ from wolf import views
 
 urlpatterns = patterns('',
     url(r'^$', views.index, name='index'),
-    url(r'^solve$', views.solve, name='solve'),
-    url(r'^run$', views.run, name='run'),
+    url(r'^solve/(?P<solutionId>\d+)$', views.solve, name='solve'),
+    url(r'^run/(?P<solutionId>\d+)$', views.run, name='run'),
 )
