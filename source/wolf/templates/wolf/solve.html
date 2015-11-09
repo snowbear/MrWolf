@@ -139,7 +139,7 @@ var TestList = React.createClass({
 		};
 		
 		var response = $.ajax({
-			url: '/run/' + solutionId, 
+			url: '{% url 'wolf:run' solutionId %}',
 			type: 'POST',
 			data: data, 
 			success: this.on_executed,
