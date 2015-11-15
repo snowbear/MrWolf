@@ -24,6 +24,9 @@ class Views_Parse_Tests(common.ViewTestBase):
         grabber2.grab_tests = mock.MagicMock(return_value = [])
                 
         views.test_grabbers.available_grabbers = [ grabber1 , grabber2 ]
+        
+        models.Template.objects.create(code = 'my code')
+
         views.parse(self.request)
         
         grabber2.grab_tests.assert_called_with(self.url)
@@ -38,6 +41,9 @@ class Views_Parse_Tests(common.ViewTestBase):
         grabber.grab_tests = mock.MagicMock(return_value = tests)
         
         views.test_grabbers.available_grabbers = [ grabber ]
+        
+        template = models.Template.objects.create(code = 'my code')
+        
         response = views.parse(self.request)
         
         redirect_url_match = urlresolvers.resolve(response.get('location'))
@@ -47,3 +53,4 @@ class Views_Parse_Tests(common.ViewTestBase):
         
         newSolution = models.Solution.objects.get(pk = newSolutionId)
         self.assertEqual(newSolution.getParsedTests(), tests)
+        self.assertEqual(newSolution.code, template.code)

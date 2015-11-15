@@ -2,7 +2,7 @@ from django import test
 from django.core import urlresolvers
 from django.test.client import RequestFactory
 
-class ViewTestBase(test.SimpleTestCase):
+class ViewTestBase(test.TestCase):
     def setUp(self):
         self.request_factory = RequestFactory()
 
