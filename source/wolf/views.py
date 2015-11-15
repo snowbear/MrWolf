@@ -3,20 +3,33 @@ from django.contrib.auth import *
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.safestring import mark_safe
 
 from hackerrank import api
+from grabbers import test_grabbers
 from wolf.models import *
 
-class SubmissionResult:
-    def __init__(self, successful, output):
-        self.successful = successful
-        self.output = output
-
+def serialize_tests_to_json(tests):
+    # todo: find a proper way to simply serialize a list of my objects
+    return json.dumps( [ t.__dict__ for t in tests ] )
+        
 def index(request):
     return HttpResponse("")
 
+def parse(request):
+    if 'url' in request.POST:
+        url = request.POST['url']
+        test_grabber = next(g for g in test_grabbers.available_grabbers if g.can_grab_from(url))
+        tests = test_grabber.grab_tests(url)
+        
+        solution = Solution.objects.create(code = '', tests = serialize_tests_to_json(tests))
+        
+        return redirect('wolf:solve', solutionId = solution.id)
+    else:
+        return render(request, 'wolf/parse.html', {
+        })
+    
 def solve(request, solutionId):
     solution = get_object_or_404(Solution, pk = solutionId)
     return render(request, 'wolf/solve.html', {
@@ -25,26 +38,27 @@ def solve(request, solutionId):
         'solutionId': solutionId,
     })
 
-def update_solution(id, code, tests):
+def update_solution(id, code, jsTests):
     solution = Solution.objects.get(pk = id)
     solution.code = code
-    solution.tests = json.dumps(tests)
+    solution.tests = jsTests
     
     solution.save()
     
 def run(request, solutionId):
     code = request.POST['code']
     
-    tests = json.loads(request.POST['tests'])
+    jsTests = request.POST['tests']
+    tests = data.Test.from_json_str(jsTests)
     
-    input = [ t['input'] for t in tests ]
-    expected_output = [ t['output'] for t in tests ]
+    input = [ t.input for t in tests ]
+    expected_output = [ t.output for t in tests ]
     
-    update_solution(solutionId, code, tests)
+    update_solution(solutionId, code, jsTests)
     
     language = api.HR_LANGUAGE.CPP
     execution_result = api.runCode(language, code, input)
     
-    result = [SubmissionResult(expected == actual, actual).__dict__ for (actual, expected) in zip(execution_result, expected_output)]
+    result = [data.SubmissionResult(expected == actual, actual).__dict__ for (actual, expected) in zip(execution_result, expected_output)]
     
     return HttpResponse(json.dumps(result))
