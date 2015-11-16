@@ -1,3 +1,4 @@
 __pycache__
 /source/django_site/settings_novcs.py
 /venv
+/.idea
