@@ -37,7 +37,7 @@
 			}
 		</style>
 		<script id="initialCode" type="text/template">{{ code|safe }}</script>
-		<script type"text/javascript>
+		<script type="text/javascript">
 			var solutionId = {{ solutionId }};
 			var initialTestData = {{ tests|safe }}
 		</script>
@@ -60,7 +60,12 @@ var CodeEditor = React.createClass({
 	},
 	render: function() {
 		return (
-			<div id="editor" style={ {width: 500 , height: 300 } } />
+            <div>
+                <div id="editor" style={ {width: 500 , height: 300 } } />
+                <div style={ {background: 'Red' } }>
+                    {this.props.compilation_error}
+                </div>
+            </div>
 		);
 	}
 });
@@ -99,7 +104,10 @@ var TestList = React.createClass({
 				status: "not_executed",
 			};
 		});
-		return { tests: tests };
+		return {
+            tests: tests,
+            compilation_error: '',
+        };
 	},
 	addTest: function(e) {
 		this.setState(function(curState) {
@@ -110,12 +118,21 @@ var TestList = React.createClass({
 		});
 	},
 	on_executed: function(result) {
-		var executionResults = JSON.parse(result);
-		window.rr = executionResults;
-		for (var i = 0 ; i < executionResults.length ; i++) {
-			this.state.tests[i].status = executionResults[i].successful ? "correct" : "incorrect";
-			this.state.tests[i].actual_output = executionResults[i].output;
-		}
+		window.rr = result;
+        if (!result.compiled) {
+            this.state.compilation_error = result.compilation_error;
+            for (var i = 0 ; i < this.state.tests.length ; i++) {
+                this.state.tests[i].status = "not_executed";
+                this.state.tests[i].actual_output = "";
+            }
+        } else {
+            this.state.compilation_error = "";
+            var executionResults = result.result;
+            for (var i = 0; i < executionResults.length; i++) {
+                this.state.tests[i].status = executionResults[i].successful ? "correct" : "incorrect";
+                this.state.tests[i].actual_output = executionResults[i].output;
+            }
+        }
 		this.setState(this.state);
 	},
 	run: function() {
@@ -168,7 +185,7 @@ var TestList = React.createClass({
 		return (
 			<table><tbody><tr>
 				<td style={ { width: 500 } }>
-					<CodeEditor ref="codeEditor" />
+					<CodeEditor ref="codeEditor" compilation_error={this.state.compilation_error} />
 				</td>
 				<td>
 					<input type="button" value="Run" onClick={this.run} />
