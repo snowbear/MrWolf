@@ -6,7 +6,7 @@ from wolf.tests.views import common
 from hackerrank import api
 
 
-class Views_Run_Tests(common.ViewTestBase):
+class Tests(common.ViewTestBase):
     def test_run_updatesSolution(self):
         solution = models.Solution.objects.create(code='', tests='')
 
@@ -14,6 +14,7 @@ class Views_Run_Tests(common.ViewTestBase):
         new_tests = [{"input": "2 1", "output": "4"}]
 
         views.api.run_code = mock.MagicMock(return_value=['3'])
+        views.compare_result = mock.MagicMock(return_value=False)
 
         data = {'code': new_code, 'tests': json.dumps(new_tests)}
         request = self.request_post('wolf:run', args=[solution.id], data=data)

@@ -6,6 +6,7 @@ from hackerrank import api
 from grabbers import test_grabbers
 from wolf.models import *
 from wolf import models
+from wolf.result_checker import compare_result
 
 
 def serialize_tests_to_json(tests):
@@ -41,14 +42,14 @@ def parse(request):
         tests = test_grabber.grab_tests(url)
         template = models.Template.objects.all()[0]
         
-        solution = Solution.objects.create(code = template.code, tests = serialize_tests_to_json(tests))
+        solution = Solution.objects.create(code=template.code, tests=serialize_tests_to_json(tests))
         
-        return redirect('wolf:solve', solutionId = solution.id)
+        return redirect('wolf:solve', solutionId=solution.id)
     else:
         return render(request, 'wolf/parse.html', {
         })
 
-    
+
 def solve(request, solutionId):
     solution = get_object_or_404(Solution, pk = solutionId)
     return render(request, 'wolf/solve.html', {
@@ -58,22 +59,22 @@ def solve(request, solutionId):
     })
 
 
-def update_solution(id, code, jsTests):
-    solution = Solution.objects.get(pk = id)
+def update_solution(id, code, js_tests):
+    solution = Solution.objects.get(pk=id)
     solution.code = code
-    solution.tests = jsTests
+    solution.tests = js_tests
     
     solution.save()
 
 
 def run(request, solutionId):
     code = request.POST['code']
-    
+
     js_tests = request.POST['tests']
     tests = data.Test.from_json_str(js_tests)
     
-    input = [ t.input for t in tests ]
-    expected_output = [ t.output for t in tests ]
+    input = [t.input for t in tests]
+    expected_output = [t.output for t in tests]
     
     update_solution(solutionId, code, js_tests)
     
@@ -86,7 +87,8 @@ def run(request, solutionId):
             'compilation_error': execution_result.error,
         })
 
-    result = [data.SubmissionResult(expected == actual, actual).__dict__ for (actual, expected) in zip(execution_result, expected_output)]
+    result = [data.SubmissionResult(compare_result(actual, expected), actual).__dict__
+              for (actual, expected) in zip(execution_result, expected_output)]
     
     return http.JsonResponse({
         'compiled': True,
