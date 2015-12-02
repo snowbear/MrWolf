@@ -38,7 +38,7 @@
 		</style>
 		<script id="initialCode" type="text/template">{{ code|safe }}</script>
 		<script type="text/javascript">
-			var solutionId = {{ solutionId }};
+			var solutionId = {{ solution_id }};
 			var initialTestData = {{ tests|safe }}
 		</script>
   </head>
@@ -156,7 +156,7 @@ var TestList = React.createClass({
 		};
 		
 		var response = $.ajax({
-			url: '{% url 'wolf:run' solutionId %}',
+			url: '{% url 'wolf:run' solution_id %}',
 			type: 'POST',
 			data: data, 
 			success: this.on_executed,

@@ -2,13 +2,14 @@ import json
 from unittest import mock
 
 from wolf import models, views
+from wolf.tests import model_mocks
 from wolf.tests.views import common
 from hackerrank import api
 
 
 class Tests(common.ViewTestBase):
     def test_run_updatesSolution(self):
-        solution = models.Solution.objects.create(code='', tests='')
+        solution = model_mocks.mock_solution()
 
         new_code = 'new code'
         new_tests = [{"input": "2 1", "output": "4"}]
@@ -33,7 +34,7 @@ class Tests(common.ViewTestBase):
         })
 
     def test_run_compilationError(self):
-        solution = models.Solution.objects.create()
+        solution = model_mocks.mock_solution()
 
         code = 'some code'
         tests = [{"input": "", "output": ""}]

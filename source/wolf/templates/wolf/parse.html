@@ -1,7 +1,8 @@
 <html>
 	<body>
 		<form method='post'>
-			URL: <input type='text' name='url' style='width: 400px' /> <br />
+			<label for="url">URL:</label>
+            <input type='text' id="url" name='url' style='width: 400px' /> <br />
 			{% csrf_token %}
 			<input type='submit' />
 		</form>

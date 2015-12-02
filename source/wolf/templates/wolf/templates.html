@@ -1,7 +1,10 @@
 <html>
     {% for template in templates %}
         <li>
-			<a href="{% url 'wolf:template-edit' template.id %}">{{ template.name }}</a>
+			<a href="{% url 'wolf:template-edit' template.id %}">
+                <b>{{ template.language.name }}</b>
+                {{ template.name }}
+            </a>
 		</li>
     {% endfor %}
 </html>

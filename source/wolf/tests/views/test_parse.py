@@ -2,6 +2,7 @@ from django.core import urlresolvers
 from unittest import mock
 
 from wolf import data, models, views
+from wolf.tests import model_mocks
 from wolf.tests.views import common
 
 
@@ -25,8 +26,8 @@ class Tests(common.ViewTestBase):
         grabber2.grab_tests = mock.MagicMock(return_value=[])
                 
         views.test_grabbers.available_grabbers = [grabber1, grabber2]
-        
-        models.Template.objects.create(code='my code')
+
+        model_mocks.mock_template()
 
         views.parse(self.request)
         
@@ -43,15 +44,16 @@ class Tests(common.ViewTestBase):
         
         views.test_grabbers.available_grabbers = [grabber]
         
-        template = models.Template.objects.create(code='my code')
+        template = model_mocks.mock_template()
         
         response = views.parse(self.request)
         
         redirect_url_match = urlresolvers.resolve(response.get('location'))
         
         self.assertEqual(redirect_url_match.func, views.solve)
-        new_solution_id = int(redirect_url_match.kwargs['solutionId'])
+        new_solution_id = int(redirect_url_match.kwargs['solution_id'])
         
         new_solution = models.Solution.objects.get(pk=new_solution_id)
         self.assertEqual(new_solution.getParsedTests(), tests)
         self.assertEqual(new_solution.code, template.code)
+        self.assertEqual(new_solution.language, template.language)

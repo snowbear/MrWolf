@@ -1,6 +1,17 @@
-<html>
+<html xmlns="http://www.w3.org/1999/html">
     <form method='post'>
-		<textarea name='code' rows='40' cols='100'>{{ template.code }}</textarea>
+        <label for="language_id">Language:</label>
+        <select id="language_id" name="language_id">
+            {% for language in languages %}
+                <option value="{{ language.id }}" {% if language == template.language %} selected {% endif %}>
+                    {{ language.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <br/>
+
+		<textarea name='code' rows='40' cols='100' title="code">{{ template.code }}</textarea>
 		{% csrf_token %}
 		<input type='submit' value='Save' />
 	</form>
