@@ -1,37 +1,38 @@
+import json
 from django import http, shortcuts
-from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404, redirect
 
 from hackerrank import api
 from grabbers import test_grabbers
-from wolf.models import *
-from wolf import models
+from wolf import data, models
 from wolf.result_checker import compare_result
 
 
 def serialize_tests_to_json(tests):
     # todo: find a proper way to simply serialize a list of my objects
-    return json.dumps( [ t.__dict__ for t in tests ] )
+    return json.dumps([t.__dict__ for t in tests])
 
 
 def index(request):
-    return HttpResponse("")
+    return http.HttpResponse("")
 
 
 def templates(request):
-    templates = models.Template.objects.all()
-    return render(request, 'wolf/templates.html', {
-        'templates': templates,
+    templates_to_show = models.Template.objects.all()
+    return shortcuts.render(request, 'wolf/templates.html', {
+        'templates': templates_to_show,
     })
 
 
-def template_edit(request, templateId):
-    template = shortcuts.get_object_or_404(models.Template, pk = templateId)
-    if 'code' in request.POST:
+def template_edit(request, template_id):
+    template = shortcuts.get_object_or_404(models.Template, pk=template_id)
+    if request.method == 'POST':
         template.code = request.POST['code']
+        new_language_id = int(request.POST['language_id'])
+        template.language = models.Language.objects.get(pk=new_language_id)
         template.save()
-    return render(request, 'wolf/templates-edit.html', {
+    return shortcuts.render(request, 'wolf/templates-edit.html', {
         'template': template,
+        'languages': models.Language.objects.all(),
     })
 
 
@@ -42,44 +43,48 @@ def parse(request):
         tests = test_grabber.grab_tests(url)
         template = models.Template.objects.all()[0]
         
-        solution = Solution.objects.create(code=template.code, tests=serialize_tests_to_json(tests))
+        solution = models.Solution.objects.create(
+            code=template.code,
+            language=template.language,
+            tests=serialize_tests_to_json(tests),
+        )
         
-        return redirect('wolf:solve', solutionId=solution.id)
+        return shortcuts.redirect('wolf:solve', solution_id=solution.id)
     else:
-        return render(request, 'wolf/parse.html', {
+        return shortcuts.render(request, 'wolf/parse.html', {
         })
 
 
-def solve(request, solutionId):
-    solution = get_object_or_404(Solution, pk = solutionId)
-    return render(request, 'wolf/solve.html', {
+def solve(request, solution_id):
+    solution = shortcuts.get_object_or_404(models.Solution, pk=solution_id)
+    return shortcuts.render(request, 'wolf/solve.html', {
         'code': solution.code,
         'tests': solution.tests,
-        'solutionId': solutionId,
+        'solution_id': solution_id,
     })
 
 
-def update_solution(id, code, js_tests):
-    solution = Solution.objects.get(pk=id)
+def update_solution(solution_id, code, js_tests):
+    solution = models.Solution.objects.get(pk=solution_id)
     solution.code = code
     solution.tests = js_tests
     
     solution.save()
 
 
-def run(request, solutionId):
+def run(request, solution_id):
     code = request.POST['code']
 
     js_tests = request.POST['tests']
     tests = data.Test.from_json_str(js_tests)
     
-    input = [t.input for t in tests]
+    tests_input = [t.input for t in tests]
     expected_output = [t.output for t in tests]
     
-    update_solution(solutionId, code, js_tests)
+    update_solution(solution_id, code, js_tests)
     
     language = api.HR_LANGUAGE.CPP
-    execution_result = api.run_code(language, code, input)
+    execution_result = api.run_code(language, code, tests_input)
 
     if type(execution_result) is api.CompilationError:
         return http.JsonResponse({
