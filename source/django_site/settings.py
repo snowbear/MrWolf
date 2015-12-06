@@ -81,3 +81,5 @@ STATIC_URL = '/static/'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 WSGI_APPLICATION = 'django_site.wsgi.application'
+
+TEST_RUNNER = "django_site.testing.DiscoverRunner"

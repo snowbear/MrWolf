@@ -1,5 +1,6 @@
 from django.test import *
 from grabbers.test_grabbers import *
+from django_site import testing
 import ddt
 
 from wolf import data
@@ -14,6 +15,7 @@ class CfGrabberTests(SimpleTestCase):
          [data.Test("3 3\n1 2 3", "8")]),
     )
     @ddt.unpack
+    @testing.test_category('slow')
     def test_parsing(self, url, expected_tests):
         grabber = CfTestGrabber()
 
