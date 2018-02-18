@@ -8,6 +8,14 @@
 		<script src="https://cdn.jsdelivr.net/ace/1.2.1/min/ace.js" type="text/javascript" charset="utf-8"></script>
 
 		<style type="text/css">
+            #editor {
+                width: 1100px;
+                height: 850px;
+            }
+
+            .indicator {
+            }
+
 			.incorrect .indicator {
 				background: red;
 			}
@@ -23,12 +31,17 @@
 			.not_executed .indicator {
 				background: lightgray;
 			}
+
+            .testcase {
+                width:100%;
+            }
 			
 			.txtInput {
 				width: 100%;
 			}
 			
 			.txtOutput {
+				width: 100%;
 				height: 100%;
 			}
 			
@@ -39,7 +52,7 @@
 		<script id="initialCode" type="text/template">{{ code|safe }}</script>
 		<script type="text/javascript">
 			var solutionId = {{ solution_id }};
-			var initialTestData = {{ tests|safe }}
+			var initialTestData = {{ tests|safe }};
 		</script>
   </head>
   <body>
@@ -53,6 +66,14 @@ var CodeEditor = React.createClass({
 		editor.setTheme("ace/theme/monokai");
 		editor.setValue(code);
 		editor.getSession().setMode("ace/mode/c_cpp");
+
+        editor.commands.addCommand({
+            name: "replace",
+            bindKey: {win: "Ctrl-Enter", mac: "Command-Option-F"},
+            exec: function() {
+                instance.run();
+            }
+        });
 	},
 	getCode: function() {
 		var editor = ace.edit("editor");
@@ -61,7 +82,7 @@ var CodeEditor = React.createClass({
 	render: function() {
 		return (
             <div>
-                <div id="editor" style={ {width: 500 , height: 300 } } />
+                <div id="editor"  />
                 <div style={ {background: 'Red' } }>
                     {this.props.compilation_error}
                 </div>
@@ -81,12 +102,12 @@ var Test = React.createClass({
 			<table className={this.props.test.status}>
 				<tbody>
 					<tr>
-						<td rowSpan="3" className="indicator" style={ { width: 20 } }></td>
+						<td rowSpan="3" className="indicator">&nbsp;</td>
 						<td colSpan="2"><textarea rows="5" className="txtInput" placeholder="Input" value={this.props.test.input} onChange={this.handleChangeInput} /></td>
 					</tr>
 					<tr>
-						<td><textarea className="txtOutput" rows="2" cols="60" placeholder="Expected output" value={this.props.test.expected_output} onChange={this.handleChangeOutput} /></td>
-						<td><textarea className="txtOutput" cols="60" placeholder="Actual output" value={this.props.test.actual_output} readOnly='true' /></td>
+						<td><textarea className="txtOutput" rows="2" placeholder="Expected output" value={this.props.test.expected_output} onChange={this.handleChangeOutput} /></td>
+						<td><textarea className="txtOutput" rows="2" placeholder="Actual output" value={this.props.test.actual_output} readOnly='true' /></td>
 					</tr>
 				</tbody>
 			</ table>
@@ -101,7 +122,7 @@ var TestList = React.createClass({
 				id: i + 1,
 				input: t.input,
 				expected_output: t.output,
-				status: "not_executed",
+				status: "not_executed testcase",
 			};
 		});
 		return {
@@ -113,7 +134,7 @@ var TestList = React.createClass({
 		this.setState(function(curState) {
 			var nextId = 1;
 			$.each(curState.tests, function(i, t) { nextId = Math.max(nextId, t.id + 1); })
-			curState.tests.push( { id : nextId, actual_output: "asfaf", status: "not_executed", expected_output: "124" });
+			curState.tests.push( { id : nextId, actual_output: "asfaf", status: "not_executed testcase", expected_output: "124" });
 			return curState;
 		});
 	},
@@ -122,14 +143,14 @@ var TestList = React.createClass({
         if (!result.compiled) {
             this.state.compilation_error = result.compilation_error;
             for (var i = 0 ; i < this.state.tests.length ; i++) {
-                this.state.tests[i].status = "not_executed";
+                this.state.tests[i].status = "not_executed testcase";
                 this.state.tests[i].actual_output = "";
             }
         } else {
             this.state.compilation_error = "";
             var executionResults = result.result;
             for (var i = 0; i < executionResults.length; i++) {
-                this.state.tests[i].status = executionResults[i].successful ? "correct" : "incorrect";
+                this.state.tests[i].status = executionResults[i].successful ? "correct testcase" : "incorrect testcase";
                 this.state.tests[i].actual_output = executionResults[i].output;
             }
         }
@@ -137,11 +158,9 @@ var TestList = React.createClass({
 	},
 	run: function() {
 		this.setState(function(curState) {
-			$.each(curState.tests, function (i, t) { t.status = 'pending'; });
+			$.each(curState.tests, function (i, t) { t.status = 'pending testcase'; });
 			return curState;
 		});
-		var input = JSON.stringify($.map(this.state.tests, function(t) { return t.input; }));
-		var expected_outputs = JSON.stringify($.map(this.state.tests, function(t) { return t.expected_output; }));
 		var tests = JSON.stringify($.map(this.state.tests, function(t) {
 			return {
 				input: t.input,
@@ -155,7 +174,7 @@ var TestList = React.createClass({
 			tests: tests,
 		};
 		
-		var response = $.ajax({
+		$.ajax({
 			url: '{% url 'wolf:run' solution_id %}',
 			type: 'POST',
 			data: data, 
@@ -184,13 +203,13 @@ var TestList = React.createClass({
 		});
 		return (
 			<table><tbody><tr>
-				<td style={ { width: 500 } }>
+				<td>
 					<CodeEditor ref="codeEditor" compilation_error={this.state.compilation_error} />
 				</td>
 				<td>
 					<input type="button" value="Run" onClick={this.run} />
 				</td>
-				<td>
+				<td style={ { width:'100%' } }>
 					<input type="button" value="Add test" onClick={this.addTest} />
 					{ tests }
 				</td>
@@ -199,7 +218,7 @@ var TestList = React.createClass({
 	}
 });
 
-ReactDOM.render(
+var instance = ReactDOM.render(
   <TestList tests={tests} />,
   document.getElementById('content')
 );
